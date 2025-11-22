@@ -1,0 +1,189 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+void addStudent() {
+    FILE *f = fopen("students.csv", "a+");
+    if (!f) { printf("File error!\n"); return; }
+
+    
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    if (size == 0)
+        fprintf(f, "roll,name,mark\n");
+
+    int n, roll, mark;
+    char name[100];
+
+    printf("Enter number of students: ");
+    scanf("%d", &n);
+
+    while (n--) {
+        printf("Roll: ");
+        scanf("%d", &roll);
+
+        printf("Name: ");
+        scanf(" %99[^\n]", name);
+
+        printf("Mark: ");
+        scanf("%d", &mark);
+
+        fprintf(f, "%d,%s,%d\n", roll, name, mark);
+    }
+
+    fclose(f);
+    printf("? Students added successfully.\n");
+}
+
+void viewStudents() {
+    FILE *f = fopen("students.csv", "r");
+    if (!f) {
+        printf("No student records found.\n");
+        return;
+    }
+
+    char line[200];
+    printf("\n---- STUDENT LIST ----\n");
+
+    while (fgets(line, sizeof(line), f))
+        printf("%s", line);
+
+    fclose(f);
+}
+
+void editStudent() {
+    int roll, newRoll, newMark, choice;
+    char newName[100];
+
+    printf("Enter roll number to edit: ");
+    scanf("%d", &roll);
+
+    FILE *f = fopen("students.csv", "r");
+    FILE *temp = fopen("temp.csv", "w");
+
+    if (!f || !temp) {
+        printf("File error!\n");
+        return;
+    }
+
+    char line[200], name[100];
+    int r, mark;
+    int found = 0;
+
+    
+    fprintf(temp, "roll,name,mark\n");
+    fgets(line, sizeof(line), f);
+    while (fgets(line, sizeof(line), f)) {
+        sscanf(line, "%d,%99[^,],%d", &r, name, &mark);
+
+        if (r == roll) {
+            found = 1;
+
+            printf("What do you want to edit?\n");
+            printf("1. Roll\n2. Name\n3. Mark\nEnter choice: ");
+            scanf("%d", &choice);
+
+            if (choice == 1) {
+                printf("Enter new roll: ");
+                scanf("%d", &newRoll);
+                r = newRoll;
+            }
+            else if (choice == 2) {
+                printf("Enter new name: ");
+                scanf(" %99[^\n]", newName);
+                strcpy(name, newName);
+            }
+            else if (choice == 3) {
+                printf("Enter new mark: ");
+                scanf("%d", &newMark);
+                mark = newMark;
+            }
+        }
+
+        fprintf(temp, "%d,%s,%d\n", r, name, mark);
+    }
+
+    fclose(f);
+    fclose(temp);
+
+    remove("students.csv");
+    rename("temp.csv", "students.csv");
+
+    if (found)
+        printf("? Student updated successfully.\n");
+    else
+        printf("? Roll number not found.\n");
+}
+
+void deleteStudent() {
+    int roll;
+
+    printf("Enter roll number to delete: ");
+    scanf("%d", &roll);
+
+    FILE *f = fopen("students.csv", "r");
+    FILE *temp = fopen("temp.csv", "w");
+
+    if (!f || !temp) {
+        printf("File error!\n");
+        return;
+    }
+
+    char line[200], name[100];
+    int r, mark;
+    int found = 0;
+
+    fprintf(temp, "roll,name,mark\n");
+    fgets(line, sizeof(line), f);
+
+    while (fgets(line, sizeof(line), f)) {
+        sscanf(line, "%d,%99[^,],%d", &r, name, &mark);
+
+        if (r == roll) {
+            found = 1;
+            continue; 
+        }
+
+        fprintf(temp, "%d,%s,%d\n", r, name, mark);
+    }
+
+    fclose(f);
+    fclose(temp);
+
+    remove("students.csv");
+    rename("temp.csv", "students.csv");
+
+    if (found)
+        printf("? Student deleted successfully.\n");
+    else
+        printf("? Roll number not found.\n");
+}
+
+int main() {
+    int choice;
+
+    while (1) {
+        printf("\n----- MENU -----\n");
+        printf("1. Add student\n");
+        printf("2. Edit student\n");
+        printf("3. Delete student\n");
+        printf("4. View students\n");
+        printf("5. Exit\n");
+        printf("Enter choice: ");
+        scanf("%d", &choice);
+
+        if (choice == 1) addStudent();
+        else if (choice == 2) editStudent();
+        else if (choice == 3) deleteStudent();
+        else if (choice == 4) viewStudents();
+        else if (choice == 5) {
+            printf("Exiting...\n");
+            break;
+        }
+        else {
+            printf("Invalid choice!\n");
+        }
+    }
+
+    return 0;
+}
